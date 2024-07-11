@@ -1,0 +1,3 @@
+[submodule "lpc845"]
+	path = lpc845
+	url = https://github.com/utn-fra-lse/lpc845
