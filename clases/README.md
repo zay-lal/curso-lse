@@ -9,3 +9,4 @@ En este directorio se dejan las presentaciones que se usan en el curso.
 - [Clase 02](clase_02/clase_02.pdf): Introducción a periféricos comunes como GPIO, SysTick, ADC y DAC. Funcionamiento básico y funciones asociadas.
 - [Clase 03](clase_03/clase_03.pdf): Introducción a periféricos como I2C, USART y PWM. Funcionamiento básico y funciones asociadas.
 - [Clase_04](clase_04/clase_04.pdf): Introducción a sistemas operativos en tiempo real, particularmente FreeRTOS. Scheduler, tareas y estados.
+- [Clase 05](clase_05/clase_05.pdf): Conceptos de sincronización de tareas con Queue, Binary Semaphore, Mutex, y Semaphore Counting.
