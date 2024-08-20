@@ -1,0 +1,226 @@
+\documentclass[aspectratio=169, xcolor=dvipsnames]{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\beamertemplatenavigationsymbolsempty
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{esint}
+\usepackage{biblatex}
+\usepackage{multicol}
+\usepackage{listings}
+
+\definecolor{myblue}{rgb}{0.29, 0.5, 0.94}
+
+\title{Aplicaciones de Sistemas Embebidos con Doble Núcleo}
+\subtitle{Desarrollo de Aplicaciones con FreeRTOS}
+\author[Fabrizio Carlassara - Laboratorio de Sistemas Embebidos]{\includegraphics[scale=0.15]{resources/images/utn_logo.png}}
+\institute{UTN FRA\\Departamento de Ingeniería Electrónica\\Laboratorio de Sistemas Embebidos}
+\date[]{\today} 
+\usetheme{Warsaw}
+\usecolortheme[named=myblue]{structure}
+\setbeamertemplate{headline}{}
+
+\begin{document}
+
+\frame{\titlepage}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{Índice}
+\begin{multicols}{2}
+\tableofcontents
+\end{multicols}
+\end{frame}
+
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{Sincronización de tareas}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+    \item Existen recursos para comunicar y sincronizar tareas (Queues, Semaphores, Mutex).
+    \item Proporcionan medios para bloquear tareas.
+    \item Pueden compartir datos de un contexto a otro.
+    \item Tienen APIs diferenciadas para usar en tareas e interrupciones.
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.75\linewidth]{resources/images/freertos_logo.png}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Queue}
+\subsection{xQueueCreate}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xQueueCreate}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+Las Queues o Colas permiten almacenar y compartir una cantidad de elementos del mismo tipo entre tareas.\newline
+\begin{itemize}
+    \item Se debe declarar primero la Queue.
+    \item Para crearla, se usa \textcolor{myblue}{xQueueCreate}.
+    \item Se indica cuantos elementos y tamaño.
+    \item Los elementos deben ser del mismo tipo.
+    \item Los elementos en la Queue se copian por valor.
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_create.c}
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{xQueueSend}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xQueueSendToBack y xQueueSendToFront}
+Las APIs \textcolor{myblue}{xQueueSendToBack} y \textcolor{myblue}{xQueueSendToFront} envían datos al final o comienzo de una cola respectivamente con la posibilidad de bloquear la tarea que la usa si la cola se encuentra llena y no es posible escribir. Tomando el caso de xQueueSendToBack tenemos:\newline
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_send.c}
+\end{column}
+\begin{column}{0.5\textwidth}
+Se puede usar la macro \textcolor{myblue}{portMAX\_DELAY} si la tarea debe bloquearse indefinidamente hasta poder escribir.
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{xQueueOverwrite}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xQueueOverwrite}
+La API \textcolor{myblue}{xQueueOverwrite} tiene un efecto similar a xQueueSendToBack pero directamente pisa el último valor de la Queue, sin bloquearse.\newline
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_overwrite.c}
+\end{column}
+\begin{column}{0.5\textwidth}
+\newline
+En este caso, no se usa el tercer parámetro para indicar ticks de bloqueo ya que esta API siempre sobreescribe el valor de la Queue. Se usa en Queues de un elemento.
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{xQueueReceive}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xQueueReceive}
+La API de \textcolor{myblue}{xQueueReceive} sirve como contraparte de las APIs de xQueueSend. Permite leer la Queue indicada y, de no ser posible, bloquear la tarea. Una vez que se lee el dato, de quita de la Queue.\newline
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_receive.c}
+\end{column}
+\begin{column}{0.5\textwidth}
+Similar al caso de xQueueSend, podemos usar el tercer parámetro con \textcolor{myblue}{portMAX\_DELAY} para bloquear la tarea hasta que haya un dato disponible para leer.
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{xQueuePeek}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xQueuePeek}
+Como la API de xQueueReceive, el caso de \textcolor{myblue}{xQueuePeek} lee la Queue pero no retira el dato de ella, solo lo copia en una nueva variable.\newline
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_peek.c}
+\end{column}
+\begin{column}{0.5\textwidth}
+Si la Queue no tiene nada para leer, la tarea se va a bloquear la cantidad de ticks que se indiquen en el tercer parámetro. Puede usarse \textcolor{myblue}{portMAX\_DELAY} para bloquear hasta que haya un dato para leer.
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{vQueueDelete y xQueueReset}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{vQueueDelete y xQueueReset}
+Podemos eliminar una Queue y liberar la memoria utilizada con la API \textcolor{myblue}{vQueueDelete}. Lo único necesario es el handle de la Queue.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_delete.c}
+Se puede, por otro lado, volver al valor inicial de la Queue reiniciándola con la API \textcolor{myblue}{xQueueReset}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_reset.c}
+\end{frame}
+
+\subsection{FromISR}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{FromISR}
+Existen versiones de las APIs anteriores que están pensadas para trabajar desde interrupciones (ISR), entre ellas: \textcolor{myblue}{xQueueReceiveFromISR}, \textcolor{myblue}{xQueueSendToBackFromISR}, \textcolor{myblue}{xQueueSendToFrontFromISR}, \textcolor{myblue}{xQueueOverwriteFromISR} y \textcolor{myblue}{xQueuePeekFromISR}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/queue_from_isr.c}
+\end{frame}
+
+\section{Semaphore}
+\subsection{xSemaphoreCreateBinary y vSemaphoreDelete}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xSemaphoreCreateBinary}
+Un Semaphore es una implementación de una Queue con dos estados posibles: Dado (Given) o Tomado (Taken).\newline
+Ocupan mucho menos RAM que una Queue y son útiles para sincronizar tareas. Se crea uno con \textcolor{myblue}{xSemaphoreCreateBinary}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_create.c}
+Para eliminar un Semaphore, se usa la API \textcolor{myblue}{vSemaphoreDelete}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_delete.c}
+\end{frame}
+
+\subsection{xSemaphoreGive y xSemaphoreTake}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xSemaphoreGive y xSemaphoreTake}
+Una tarea se bloquea cuando intenta hacer un \textcolor{myblue}{xSemaphoreTake} y no está disponible. Se desbloquea cuando otra tarea hace un \textcolor{myblue}{xSemaphoreGive}.\newline
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_give.c}
+\end{column}
+\begin{column}{0.5\textwidth}
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_take.c}
+\end{column}
+\end{columns}
+Una tarea que toma un Semaphore no es necesario que lo devuelva para que otra lo de.
+\end{frame}
+
+\subsection{FromISR}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{FromISR}
+Conmo con las Queues, existen APIs dedicadas para llamar desde interrupciones para los Semaphores.\newline
+Las alternativas para estas APIs son \textcolor{myblue}{xSemaphoreGiveFromISR} y \textcolor{myblue}{xSemaphoreTakeFromISR}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_from_isr.c}
+\end{frame}
+
+\section{Mutex}
+\subsection{xSemaphoreCreateMutex}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xSemaphoreCreateMutex}
+Los Mutex son un tipo de Semaphore especial que se usan para exclusión mutua.\newline
+La API para crear un Mutex es \textcolor{myblue}{xSemaphoreCreateMutex}.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/mutex_create.c}
+Las APIs son las mismas que para el caso de un Semaphore normal, pero una tarea que toma un Mutex, debe devolverlo para que otra tarea lo tome.\newline
+\end{frame}
+
+\section{Semaphore Counting}
+\subsection{xSemaphoreCreateCounting y uxSemaphoreGetCount}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{xSemaphoreCreateCounting}
+Este es un Semaphore especial que cuando una tarea lo da, incrementa una cuenta y cuando se toma, la cuenta baja.\newline
+Son especialmente útiles para contar eventos.\newline
+\lstinputlisting[language=c, basicstyle=\tiny]{resources/listings/semaphore_counting_create.c}
+Las APIs son las mismas que para manejar un Semaphore.
+\end{frame}
+
+\section{Ejercicios}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{Ejercicios}
+    Algunas propuestas para practicar
+    \noindent\rule{\textwidth}{0.75pt}
+    \begin{enumerate}
+        \item En un proyecto llamado \textbf{05\_display\_controller}, hacer un programa que muestre del 00 al 99 en el display 7 segmentos. Se incrementa el número con S1, se decrementa con S2 y se resetea con USR.
+        \item En un proyecto llamado \textbf{05\_proportional\_control}, armar un programa que lea RV21 y RV22. En función de la diferencia, se enciende con mayor intensidad el D1.
+        \item En un proyecto llamado \textbf{05\_frequency\_counter} hacer un programa que cuente la frecuencia de una señal pulsante y la muestre por consola.
+    \end{enumerate}
+    \noindent\rule{\textwidth}{0.75pt}
+    Cada ejercicio que se resuelva, subirlo al repositorio personal del curso.
+\end{frame}
+
+\section{Referencias}
+\begin{frame}{Desarrollo de Aplicaciones con FreeRTOS}{Referencias}
+    Algunos recursos útiles
+    \noindent\rule{\textwidth}{0.75pt}
+    \begin{multicols}{2}
+    \begin{itemize}
+        \item \href{https://github.com/utn-fra-lse/lpc845/blob/main/docs/UM11029.pdf}{Manual del LPC845}
+        \item \href{https://github.com/utn-fra-lse/lpc845/blob/main/docs/UM11181.pdf}{Manual del LPC845 Breakout Board}
+        \item \href{https://mcuxpresso.nxp.com/api_doc/dev/116/modules.html}{Documentación del SDK del LPC845}
+        \item \href{https://github.com/utn-fra-lse/lpc845/blob/main/docs/BASE_KIT_V0.pdf}{Esquemático del kit del laboratorio}
+        \item \href{https://www.freertos.org/Documentation/01-FreeRTOS-quick-start/01-Beginners-guide/01-RTOS-fundamentals}{RTOS Fundamentals - FreeRTOS}
+        \item \href{https://www.freertos.org/media/2018/FreeRTOS_Reference_Manual_V10.0.0.pdf}{The FreeRTOS Reference Manual}
+        \item \href{https://github.com/FreeRTOS/FreeRTOS-Kernel-Book/releases/download/V1.0/Mastering-the-FreeRTOS-Real-Time-Kernel.v1.0.pdf}{Mastering the FreeRTOS Real Time Kernel}
+        \item \href{https://www.phippselectronics.com/working-with-queues-in-freertos/?srsltid=AfmBOoqADQtj43nCXhWAF3RlDFPmQAGASm-NVfMp3yBOcVNQ9WwPgjF0}{Working with Queues in FreeRTOS}
+        \item \href{https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-5-freertos-queue-example/72d2b361f7b94e0691d947c7c29a03c9}{FreeRTOS Queue Example}
+        \item \href{https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-7-freertos-semaphore-example/51aa8660524c4daba38cba7c2f5baba7}{FreeRTOS Semaphore Example}
+        \item \href{https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-6-freertos-mutex-example/c6e3581aa2204f1380e83a9b4c3807a6}{FreeRTOS Mutex Example}
+        \item \href{https://www.digikey.se/en/maker/projects/introduction-to-rtos-solution-to-part-7-freertos-semaphore-example/51aa8660524c4daba38cba7c2f5baba7}{FreeRTOS Semaphore Counting Example}
+    \end{itemize}
+    \end{multicols}
+\end{frame}
+
+\end{document}
